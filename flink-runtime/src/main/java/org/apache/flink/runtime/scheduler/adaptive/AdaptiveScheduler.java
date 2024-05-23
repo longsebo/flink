@@ -1292,10 +1292,7 @@ public class AdaptiveScheduler
      */
     @Override
     public boolean shouldRescale(ExecutionGraph executionGraph, boolean forceRescale) {
-        final Optional<VertexParallelism> maybeNewParallelism =
-                slotAllocator.determineParallelism(
-                        jobInformation, declarativeSlotPool.getAllSlotsInformation());
-        return maybeNewParallelism
+        return getAvailableVertexParallelism()
                 .filter(
                         vertexParallelism -> {
                             RescalingController rescalingControllerToUse =
@@ -1304,6 +1301,12 @@ public class AdaptiveScheduler
                                     getCurrentParallelism(executionGraph), vertexParallelism);
                         })
                 .isPresent();
+    }
+
+    @Override
+    public Optional<VertexParallelism> getAvailableVertexParallelism() {
+        return slotAllocator.determineParallelism(
+                jobInformation, declarativeSlotPool.getAllSlotsInformation());
     }
 
     private static VertexParallelism getCurrentParallelism(ExecutionGraph executionGraph) {

@@ -32,6 +32,7 @@ import org.apache.flink.runtime.executiongraph.ExecutionJobVertex;
 import org.apache.flink.runtime.executiongraph.ExecutionVertex;
 import org.apache.flink.runtime.scheduler.ExecutionGraphHandler;
 import org.apache.flink.runtime.scheduler.OperatorCoordinatorHandler;
+import org.apache.flink.runtime.scheduler.adaptive.allocator.VertexParallelism;
 import org.apache.flink.runtime.scheduler.exceptionhistory.ExceptionHistoryEntry;
 import org.apache.flink.runtime.scheduler.stopwithsavepoint.StopWithSavepointTerminationManager;
 import org.apache.flink.util.Preconditions;
@@ -45,6 +46,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 
@@ -270,7 +272,14 @@ class Executing extends StateWithExecutionGraph implements ResourceListener {
          * @param forceRescale should we force rescaling
          * @return true, if we should rescale
          */
+        @Deprecated
         boolean shouldRescale(ExecutionGraph executionGraph, boolean forceRescale);
+
+        /**
+         * Returns the {@link VertexParallelism} that can be provided by the currently available
+         * slots.
+         */
+        Optional<VertexParallelism> getAvailableVertexParallelism();
 
         /**
          * Runs the given action after a delay if the state at this time equals the expected state.

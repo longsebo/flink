@@ -62,6 +62,7 @@ import org.apache.flink.runtime.operators.coordination.CoordinatorStoreImpl;
 import org.apache.flink.runtime.scheduler.DefaultVertexParallelismInfo;
 import org.apache.flink.runtime.scheduler.ExecutionGraphHandler;
 import org.apache.flink.runtime.scheduler.OperatorCoordinatorHandler;
+import org.apache.flink.runtime.scheduler.adaptive.allocator.VertexParallelism;
 import org.apache.flink.runtime.scheduler.exceptionhistory.ExceptionHistoryEntry;
 import org.apache.flink.runtime.scheduler.exceptionhistory.RootExceptionHistoryEntry;
 import org.apache.flink.runtime.scheduler.exceptionhistory.TestingAccessExecution;
@@ -665,6 +666,8 @@ class ExecutingTest {
                 new StateValidator<>("cancelling");
 
         private Function<Throwable, FailureResult> howToHandleFailure;
+        private Supplier<Optional<VertexParallelism>> availableVertexParallelismSupplier =
+                Optional::empty;
         private boolean canScaleUpWithoutForce = false;
         private boolean canScaleUpWithForce = false;
         private StateValidator<StopWithSavepointArguments> stopWithSavepointValidator =
@@ -690,6 +693,12 @@ class ExecutingTest {
 
         public void setHowToHandleFailure(Function<Throwable, FailureResult> function) {
             this.howToHandleFailure = function;
+        }
+
+        public MockExecutingContext setAvailableVertexParallelismSupplier(
+                Supplier<Optional<VertexParallelism>> availableVertexParallelismSupplier) {
+            this.availableVertexParallelismSupplier = availableVertexParallelismSupplier;
+            return this;
         }
 
         public void setCanScaleUp(boolean canScaleUpWithoutForce, boolean canScaleUpWithForce) {
@@ -728,6 +737,11 @@ class ExecutingTest {
             } else {
                 return canScaleUpWithoutForce;
             }
+        }
+
+        @Override
+        public Optional<VertexParallelism> getAvailableVertexParallelism() {
+            return availableVertexParallelismSupplier.get();
         }
 
         @Override
