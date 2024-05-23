@@ -32,7 +32,11 @@ public class EnforceMinimalIncreaseRescalingController implements RescalingContr
     private final int minParallelismIncrease;
 
     public EnforceMinimalIncreaseRescalingController(Configuration configuration) {
-        minParallelismIncrease = configuration.get(MIN_PARALLELISM_INCREASE);
+        this(configuration.get(MIN_PARALLELISM_INCREASE));
+    }
+
+    public EnforceMinimalIncreaseRescalingController(int minParallelismIncrease) {
+        this.minParallelismIncrease = minParallelismIncrease;
     }
 
     @Override
