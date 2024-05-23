@@ -152,6 +152,7 @@ class ExecutingTest {
                     new ArrayList<>(),
                     Duration.ZERO,
                     null,
+                    1,
                     Instant.now());
             assertThat(mockExecutionVertex.isDeployCalled()).isFalse();
         }
@@ -179,6 +180,7 @@ class ExecutingTest {
                                         new ArrayList<>(),
                                         Duration.ZERO,
                                         null,
+                                        1,
                                         Instant.now());
                             }
                         })
@@ -594,6 +596,7 @@ class ExecutingTest {
         private OperatorCoordinatorHandler operatorCoordinatorHandler;
         private Duration scalingIntervalMin = Duration.ZERO;
         @Nullable private Duration scalingIntervalMax;
+        private int minParallelismChangeForDesiredRescale = 1;
         private Instant lastRescale = Instant.now();
 
         private ExecutingStateBuilder() throws JobException, JobExecutionException {
@@ -621,6 +624,12 @@ class ExecutingTest {
             return this;
         }
 
+        public ExecutingStateBuilder setMinParallelismChangeForDesiredRescale(
+                int minParallelismChangeForDesiredRescale) {
+            this.minParallelismChangeForDesiredRescale = minParallelismChangeForDesiredRescale;
+            return this;
+        }
+
         public ExecutingStateBuilder setLastRescale(Instant lastRescale) {
             this.lastRescale = lastRescale;
             return this;
@@ -640,6 +649,7 @@ class ExecutingTest {
                         new ArrayList<>(),
                         scalingIntervalMin,
                         scalingIntervalMax,
+                        minParallelismChangeForDesiredRescale,
                         lastRescale);
             } finally {
                 Preconditions.checkState(
@@ -728,15 +738,6 @@ class ExecutingTest {
         public FailureResult howToHandleFailure(
                 Throwable failure, CompletableFuture<Map<String, String>> failureLabels) {
             return howToHandleFailure.apply(failure);
-        }
-
-        @Override
-        public boolean shouldRescale(ExecutionGraph executionGraph, boolean forceRescale) {
-            if (forceRescale) {
-                return canScaleUpWithForce;
-            } else {
-                return canScaleUpWithoutForce;
-            }
         }
 
         @Override

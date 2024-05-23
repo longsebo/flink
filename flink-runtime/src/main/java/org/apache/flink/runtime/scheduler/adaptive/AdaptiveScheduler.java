@@ -57,7 +57,6 @@ import org.apache.flink.runtime.executiongraph.ArchivedExecutionGraph;
 import org.apache.flink.runtime.executiongraph.DefaultVertexAttemptNumberStore;
 import org.apache.flink.runtime.executiongraph.ExecutionAttemptID;
 import org.apache.flink.runtime.executiongraph.ExecutionGraph;
-import org.apache.flink.runtime.executiongraph.ExecutionJobVertex;
 import org.apache.flink.runtime.executiongraph.ExecutionVertex;
 import org.apache.flink.runtime.executiongraph.JobStatusListener;
 import org.apache.flink.runtime.executiongraph.MutableVertexAttemptNumberStore;
@@ -110,9 +109,6 @@ import org.apache.flink.runtime.scheduler.adaptive.allocator.JobInformation;
 import org.apache.flink.runtime.scheduler.adaptive.allocator.ReservedSlots;
 import org.apache.flink.runtime.scheduler.adaptive.allocator.SlotAllocator;
 import org.apache.flink.runtime.scheduler.adaptive.allocator.VertexParallelism;
-import org.apache.flink.runtime.scheduler.adaptive.scalingpolicy.EnforceMinimalIncreaseRescalingController;
-import org.apache.flink.runtime.scheduler.adaptive.scalingpolicy.EnforceParallelismChangeRescalingController;
-import org.apache.flink.runtime.scheduler.adaptive.scalingpolicy.RescalingController;
 import org.apache.flink.runtime.scheduler.exceptionhistory.ExceptionHistoryEntry;
 import org.apache.flink.runtime.scheduler.exceptionhistory.RootExceptionHistoryEntry;
 import org.apache.flink.runtime.scheduler.metrics.DeploymentStateTimeMetrics;
@@ -147,7 +143,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.apache.flink.configuration.JobManagerOptions.MIN_PARALLELISM_INCREASE;
 import static org.apache.flink.runtime.executiongraph.ExecutionGraphUtils.isAnyOutputBlocking;
@@ -317,10 +312,6 @@ public class AdaptiveScheduler
 
     private final SlotAllocator slotAllocator;
 
-    private final RescalingController rescalingController;
-
-    private final RescalingController forceRescalingController;
-
     private final ExecutionGraphFactory executionGraphFactory;
 
     private State state = new Created(this, LOG);
@@ -403,10 +394,6 @@ public class AdaptiveScheduler
         declarativeSlotPool.registerNewSlotsListener(this::newResourcesAvailable);
 
         this.componentMainThreadExecutor = mainThreadExecutor;
-
-        this.rescalingController = new EnforceMinimalIncreaseRescalingController(configuration);
-
-        this.forceRescalingController = new EnforceParallelismChangeRescalingController();
 
         this.executionGraphFactory = executionGraphFactory;
 
@@ -1285,37 +1272,10 @@ public class AdaptiveScheduler
                 LOG);
     }
 
-    /**
-     * In regular mode, rescale the job if added resource meets {@link
-     * JobManagerOptions#MIN_PARALLELISM_INCREASE}. In force mode rescale if the parallelism has
-     * changed.
-     */
-    @Override
-    public boolean shouldRescale(ExecutionGraph executionGraph, boolean forceRescale) {
-        return getAvailableVertexParallelism()
-                .filter(
-                        vertexParallelism -> {
-                            RescalingController rescalingControllerToUse =
-                                    forceRescale ? forceRescalingController : rescalingController;
-                            return rescalingControllerToUse.shouldRescale(
-                                    getCurrentParallelism(executionGraph), vertexParallelism);
-                        })
-                .isPresent();
-    }
-
     @Override
     public Optional<VertexParallelism> getAvailableVertexParallelism() {
         return slotAllocator.determineParallelism(
                 jobInformation, declarativeSlotPool.getAllSlotsInformation());
-    }
-
-    private static VertexParallelism getCurrentParallelism(ExecutionGraph executionGraph) {
-        return new VertexParallelism(
-                executionGraph.getAllVertices().values().stream()
-                        .collect(
-                                Collectors.toMap(
-                                        ExecutionJobVertex::getJobVertexId,
-                                        ExecutionJobVertex::getParallelism)));
     }
 
     @Override
