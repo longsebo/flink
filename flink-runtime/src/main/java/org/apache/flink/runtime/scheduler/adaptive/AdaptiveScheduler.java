@@ -149,6 +149,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.configuration.JobManagerOptions.MIN_PARALLELISM_INCREASE;
 import static org.apache.flink.runtime.executiongraph.ExecutionGraphUtils.isAnyOutputBlocking;
 
 /**
@@ -228,7 +229,8 @@ public class AdaptiveScheduler
                             .orElse(stabilizationTimeoutDefault),
                     configuration.get(JobManagerOptions.SLOT_IDLE_TIMEOUT),
                     scalingIntervalMin,
-                    scalingIntervalMax);
+                    scalingIntervalMax,
+                    configuration.get(MIN_PARALLELISM_INCREASE));
         }
 
         private final SchedulerExecutionMode executionMode;
@@ -237,6 +239,7 @@ public class AdaptiveScheduler
         private final Duration slotIdleTimeout;
         private final Duration scalingIntervalMin;
         private final Duration scalingIntervalMax;
+        private final int minParallelismChangeForDesiredRescale;
 
         private Settings(
                 SchedulerExecutionMode executionMode,
@@ -244,13 +247,15 @@ public class AdaptiveScheduler
                 Duration resourceStabilizationTimeout,
                 Duration slotIdleTimeout,
                 Duration scalingIntervalMin,
-                Duration scalingIntervalMax) {
+                Duration scalingIntervalMax,
+                int minParallelismChangeForDesiredRescale) {
             this.executionMode = executionMode;
             this.initialResourceAllocationTimeout = initialResourceAllocationTimeout;
             this.resourceStabilizationTimeout = resourceStabilizationTimeout;
             this.slotIdleTimeout = slotIdleTimeout;
             this.scalingIntervalMin = scalingIntervalMin;
             this.scalingIntervalMax = scalingIntervalMax;
+            this.minParallelismChangeForDesiredRescale = minParallelismChangeForDesiredRescale;
         }
 
         public SchedulerExecutionMode getExecutionMode() {
@@ -275,6 +280,10 @@ public class AdaptiveScheduler
 
         public Duration getScalingIntervalMax() {
             return scalingIntervalMax;
+        }
+
+        public int getMinParallelismChangeForDesiredRescale() {
+            return minParallelismChangeForDesiredRescale;
         }
     }
 
@@ -1049,7 +1058,8 @@ public class AdaptiveScheduler
                         userCodeClassLoader,
                         failureCollection,
                         settings.getScalingIntervalMin(),
-                        settings.getScalingIntervalMax()));
+                        settings.getScalingIntervalMax(),
+                        settings.getMinParallelismChangeForDesiredRescale()));
     }
 
     @Override
