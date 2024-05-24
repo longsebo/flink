@@ -18,9 +18,39 @@
 
 package org.apache.flink.runtime.scheduler.adaptive;
 
+import org.apache.flink.runtime.scheduler.adaptive.allocator.VertexParallelism;
+
+import java.time.Duration;
+import java.util.Optional;
+
 /** The {@code RescaleManager} decides on whether rescaling should happen or not. */
 public interface RescaleManager {
 
     /** Is called if the environment changed in a way that a rescaling could be considered. */
     void onChange();
+
+    /**
+     * The interface that can be used by the {@code }RescaleManager} to communicate with the
+     * underlying system.
+     */
+    interface Context {
+
+        /**
+         * Returns the {@link VertexParallelism} of the currently deployed {@link
+         * org.apache.flink.runtime.executiongraph.ExecutionGraph}.
+         */
+        VertexParallelism getCurrentVertexParallelism();
+
+        /**
+         * Returns the {@link VertexParallelism} that could be achieved by the currently available
+         * free slots for the job or an empty {@code Optional} if there are not enough free slots.
+         */
+        Optional<VertexParallelism> getAvailableVertexParallelism();
+
+        /** Triggers the rescaling of the job. */
+        void rescale();
+
+        /** Runs operation with a given delay in the underlying main thread. */
+        void scheduleOperation(Runnable callback, Duration delay);
+    }
 }

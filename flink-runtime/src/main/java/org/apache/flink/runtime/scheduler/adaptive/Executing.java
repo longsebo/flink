@@ -50,7 +50,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
 /** State which represents a running job with an {@link ExecutionGraph} and assigned slots. */
-class Executing extends StateWithExecutionGraph implements ResourceListener {
+class Executing extends StateWithExecutionGraph
+        implements ResourceListener, RescaleManager.Context {
 
     private final Context context;
 
@@ -82,10 +83,7 @@ class Executing extends StateWithExecutionGraph implements ResourceListener {
         this.rescaleManager =
                 new DefaultRescaleManager(
                         lastRescale,
-                        this::getCurrentParallelism,
-                        context::getAvailableVertexParallelism,
-                        this::transitionToRestarting,
-                        (callback, delay) -> context.runIfState(this, callback, delay),
+                        this,
                         scalingIntervalMin,
                         scalingIntervalMax,
                         minParallelismChangeForDesiredRescale);
@@ -96,7 +94,18 @@ class Executing extends StateWithExecutionGraph implements ResourceListener {
         context.runIfState(this, rescaleManager::onChange, Duration.ZERO);
     }
 
-    private VertexParallelism getCurrentParallelism() {
+    @Override
+    public Optional<VertexParallelism> getAvailableVertexParallelism() {
+        return context.getAvailableVertexParallelism();
+    }
+
+    @Override
+    public void scheduleOperation(Runnable callback, Duration delay) {
+        context.runIfState(this, callback, delay);
+    }
+
+    @Override
+    public VertexParallelism getCurrentVertexParallelism() {
         return new VertexParallelism(
                 this.getExecutionGraph().getAllVertices().values().stream()
                         .collect(
@@ -105,7 +114,8 @@ class Executing extends StateWithExecutionGraph implements ResourceListener {
                                         ExecutionJobVertex::getParallelism)));
     }
 
-    private void transitionToRestarting() {
+    @Override
+    public void rescale() {
         context.goToRestarting(
                 getExecutionGraph(),
                 getExecutionGraphHandler(),
