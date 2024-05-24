@@ -1044,9 +1044,7 @@ public class AdaptiveScheduler
                         this,
                         userCodeClassLoader,
                         failureCollection,
-                        settings.getScalingIntervalMin(),
-                        settings.getScalingIntervalMax(),
-                        settings.getMinParallelismChangeForDesiredRescale()));
+                        DefaultRescaleManager.Factory.fromSettings(settings)));
     }
 
     @Override

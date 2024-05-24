@@ -18,6 +18,7 @@
 
 package org.apache.flink.runtime.scheduler.adaptive;
 
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.runtime.scheduler.adaptive.scalingpolicy.EnforceMinimalIncreaseRescalingController;
 import org.apache.flink.runtime.scheduler.adaptive.scalingpolicy.EnforceParallelismChangeRescalingController;
 import org.apache.flink.runtime.scheduler.adaptive.scalingpolicy.RescalingController;
@@ -53,10 +54,10 @@ public class DefaultRescaleManager implements RescaleManager {
 
     private final Instant initializationTime;
 
-    private final Duration scalingIntervalMin;
-    @Nullable private final Duration scalingIntervalMax;
+    @VisibleForTesting final Duration scalingIntervalMin;
+    @VisibleForTesting @Nullable final Duration scalingIntervalMax;
 
-    private final int minParallelismChange;
+    @VisibleForTesting final int minParallelismChange;
     private final RescalingController softRescalingController;
     private final RescalingController hardRescalingController;
 
@@ -64,7 +65,8 @@ public class DefaultRescaleManager implements RescaleManager {
 
     private boolean rescaleScheduled = false;
 
-    public DefaultRescaleManager(
+    @VisibleForTesting
+    DefaultRescaleManager(
             Instant initializationTime,
             RescaleManager.Context rescaleContext,
             Duration scalingIntervalMin,
@@ -141,5 +143,44 @@ public class DefaultRescaleManager implements RescaleManager {
                                         rescaleContext.getCurrentVertexParallelism(),
                                         availableVertexParallelism))
                 .isPresent();
+    }
+
+    public static class Factory implements RescaleManager.Factory {
+
+        private final Duration scalingIntervalMin;
+        @Nullable private final Duration scalingIntervalMax;
+        private final int minParallelismChange;
+
+        /**
+         * Creates a {@code Factory} instance based on the {@link AdaptiveScheduler}'s {@code
+         * Settings} for rescaling.
+         */
+        public static Factory fromSettings(AdaptiveScheduler.Settings settings) {
+            // it's not ideal that we use a AdaptiveScheduler internal class here. We might want to
+            // change that as part of a more general alignment of the rescaling configuration.
+            return new Factory(
+                    settings.getScalingIntervalMin(),
+                    settings.getScalingIntervalMax(),
+                    settings.getMinParallelismChangeForDesiredRescale());
+        }
+
+        private Factory(
+                Duration scalingIntervalMin,
+                @Nullable Duration scalingIntervalMax,
+                int minParallelismChange) {
+            this.scalingIntervalMin = scalingIntervalMin;
+            this.scalingIntervalMax = scalingIntervalMax;
+            this.minParallelismChange = minParallelismChange;
+        }
+
+        @Override
+        public DefaultRescaleManager create(Context rescaleContext, Instant lastRescale) {
+            return new DefaultRescaleManager(
+                    lastRescale,
+                    rescaleContext,
+                    scalingIntervalMin,
+                    scalingIntervalMax,
+                    minParallelismChange);
+        }
     }
 }

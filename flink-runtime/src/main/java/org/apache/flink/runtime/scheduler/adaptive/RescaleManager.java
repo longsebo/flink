@@ -21,6 +21,7 @@ package org.apache.flink.runtime.scheduler.adaptive;
 import org.apache.flink.runtime.scheduler.adaptive.allocator.VertexParallelism;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 /** The {@code RescaleManager} decides on whether rescaling should happen or not. */
@@ -52,5 +53,15 @@ public interface RescaleManager {
 
         /** Runs operation with a given delay in the underlying main thread. */
         void scheduleOperation(Runnable callback, Duration delay);
+    }
+
+    /** Interface for creating {@code RescaleManager} instances. */
+    interface Factory {
+
+        /**
+         * Creates a {@code RescaleManager} instance for the given {@code rescaleContext} and
+         * previous rescale time.
+         */
+        RescaleManager create(Context rescaleContext, Instant lastRescale);
     }
 }

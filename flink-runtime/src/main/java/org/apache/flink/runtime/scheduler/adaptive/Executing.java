@@ -65,9 +65,7 @@ class Executing extends StateWithExecutionGraph
             Context context,
             ClassLoader userCodeClassLoader,
             List<ExceptionHistoryEntry> failureCollection,
-            Duration scalingIntervalMin,
-            @Nullable Duration scalingIntervalMax,
-            int minParallelismChangeForDesiredRescale,
+            RescaleManager.Factory rescaleManagerFactory,
             Instant lastRescale) {
         super(
                 context,
@@ -80,13 +78,7 @@ class Executing extends StateWithExecutionGraph
         this.context = context;
         Preconditions.checkState(
                 executionGraph.getState() == JobStatus.RUNNING, "Assuming running execution graph");
-        this.rescaleManager =
-                new DefaultRescaleManager(
-                        lastRescale,
-                        this,
-                        scalingIntervalMin,
-                        scalingIntervalMax,
-                        minParallelismChangeForDesiredRescale);
+        this.rescaleManager = rescaleManagerFactory.create(this, lastRescale);
 
         deploy();
 
@@ -259,9 +251,7 @@ class Executing extends StateWithExecutionGraph
         private final OperatorCoordinatorHandler operatorCoordinatorHandler;
         private final ClassLoader userCodeClassLoader;
         private final List<ExceptionHistoryEntry> failureCollection;
-        private final Duration scalingIntervalMin;
-        private final Duration scalingIntervalMax;
-        private final int minParallelismChangeForDesiredRescale;
+        private final RescaleManager.Factory rescaleManagerFactory;
 
         Factory(
                 ExecutionGraph executionGraph,
@@ -271,9 +261,7 @@ class Executing extends StateWithExecutionGraph
                 Context context,
                 ClassLoader userCodeClassLoader,
                 List<ExceptionHistoryEntry> failureCollection,
-                Duration scalingIntervalMin,
-                Duration scalingIntervalMax,
-                int minParallelismChangeForDesiredRescale) {
+                RescaleManager.Factory rescaleManagerFactory) {
             this.context = context;
             this.log = log;
             this.executionGraph = executionGraph;
@@ -281,9 +269,7 @@ class Executing extends StateWithExecutionGraph
             this.operatorCoordinatorHandler = operatorCoordinatorHandler;
             this.userCodeClassLoader = userCodeClassLoader;
             this.failureCollection = failureCollection;
-            this.scalingIntervalMin = scalingIntervalMin;
-            this.scalingIntervalMax = scalingIntervalMax;
-            this.minParallelismChangeForDesiredRescale = minParallelismChangeForDesiredRescale;
+            this.rescaleManagerFactory = rescaleManagerFactory;
         }
 
         public Class<Executing> getStateClass() {
@@ -299,9 +285,7 @@ class Executing extends StateWithExecutionGraph
                     context,
                     userCodeClassLoader,
                     failureCollection,
-                    scalingIntervalMin,
-                    scalingIntervalMax,
-                    minParallelismChangeForDesiredRescale,
+                    rescaleManagerFactory,
                     Instant.now());
         }
     }
