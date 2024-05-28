@@ -31,6 +31,8 @@ import javax.annotation.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.Temporal;
+import java.util.function.Supplier;
 
 /**
  * {@code DefaultRescaleManager} manages the rescaling in depending on time of the previous rescale
@@ -52,7 +54,8 @@ public class DefaultRescaleManager implements RescaleManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultRescaleManager.class);
 
-    private final Instant initializationTime;
+    private final Temporal initializationTime;
+    private final Supplier<Temporal> clock;
 
     @VisibleForTesting final Duration scalingIntervalMin;
     @VisibleForTesting @Nullable final Duration scalingIntervalMax;
@@ -65,14 +68,31 @@ public class DefaultRescaleManager implements RescaleManager {
 
     private boolean rescaleScheduled = false;
 
+    DefaultRescaleManager(
+            Temporal initializationTime,
+            RescaleManager.Context rescaleContext,
+            Duration scalingIntervalMin,
+            @Nullable Duration scalingIntervalMax,
+            int minParallelismChange) {
+        this(
+                initializationTime,
+                Instant::now,
+                rescaleContext,
+                scalingIntervalMin,
+                scalingIntervalMax,
+                minParallelismChange);
+    }
+
     @VisibleForTesting
     DefaultRescaleManager(
-            Instant initializationTime,
+            Temporal initializationTime,
+            Supplier<Temporal> clock,
             RescaleManager.Context rescaleContext,
             Duration scalingIntervalMin,
             @Nullable Duration scalingIntervalMax,
             int minParallelismChange) {
         this.initializationTime = initializationTime;
+        this.clock = clock;
 
         Preconditions.checkArgument(
                 scalingIntervalMax == null || scalingIntervalMin.compareTo(scalingIntervalMax) <= 0,
@@ -99,7 +119,7 @@ public class DefaultRescaleManager implements RescaleManager {
     }
 
     private Duration timeSinceLastRescale() {
-        return Duration.between(this.initializationTime, Instant.now());
+        return Duration.between(this.initializationTime, clock.get());
     }
 
     private void maybeRescale() {
