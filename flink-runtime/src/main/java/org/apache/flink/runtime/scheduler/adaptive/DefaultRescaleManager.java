@@ -19,6 +19,7 @@
 package org.apache.flink.runtime.scheduler.adaptive;
 
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.runtime.scheduler.adaptive.allocator.VertexParallelism;
 import org.apache.flink.runtime.scheduler.adaptive.scalingpolicy.EnforceMinimalIncreaseRescalingController;
 import org.apache.flink.runtime.scheduler.adaptive.scalingpolicy.EnforceParallelismChangeRescalingController;
 import org.apache.flink.runtime.scheduler.adaptive.scalingpolicy.RescalingController;
@@ -65,12 +66,14 @@ public class DefaultRescaleManager implements RescaleManager {
     private final RescalingController hardRescalingController;
 
     private final RescaleManager.Context rescaleContext;
+    private final VertexParallelism currentVertexParallelism;
 
     private boolean rescaleScheduled = false;
 
     DefaultRescaleManager(
             Temporal initializationTime,
             RescaleManager.Context rescaleContext,
+            VertexParallelism currentVertexParallelism,
             Duration scalingIntervalMin,
             @Nullable Duration scalingIntervalMax,
             int minParallelismChange) {
@@ -78,6 +81,7 @@ public class DefaultRescaleManager implements RescaleManager {
                 initializationTime,
                 Instant::now,
                 rescaleContext,
+                currentVertexParallelism,
                 scalingIntervalMin,
                 scalingIntervalMax,
                 minParallelismChange);
@@ -88,6 +92,7 @@ public class DefaultRescaleManager implements RescaleManager {
             Temporal initializationTime,
             Supplier<Temporal> clock,
             RescaleManager.Context rescaleContext,
+            VertexParallelism currentVertexParallelism,
             Duration scalingIntervalMin,
             @Nullable Duration scalingIntervalMax,
             int minParallelismChange) {
@@ -101,6 +106,7 @@ public class DefaultRescaleManager implements RescaleManager {
         this.scalingIntervalMax = scalingIntervalMax;
 
         this.rescaleContext = rescaleContext;
+        this.currentVertexParallelism = currentVertexParallelism;
 
         this.minParallelismChange = minParallelismChange;
         this.softRescalingController =
@@ -160,8 +166,7 @@ public class DefaultRescaleManager implements RescaleManager {
                 .filter(
                         availableVertexParallelism ->
                                 rescalingController.shouldRescale(
-                                        rescaleContext.getCurrentVertexParallelism(),
-                                        availableVertexParallelism))
+                                        this.currentVertexParallelism, availableVertexParallelism))
                 .isPresent();
     }
 
@@ -194,10 +199,14 @@ public class DefaultRescaleManager implements RescaleManager {
         }
 
         @Override
-        public DefaultRescaleManager create(Context rescaleContext, Instant lastRescale) {
+        public DefaultRescaleManager create(
+                Context rescaleContext,
+                VertexParallelism currentVertexParallelism,
+                Instant lastRescale) {
             return new DefaultRescaleManager(
                     lastRescale,
                     rescaleContext,
+                    currentVertexParallelism,
                     scalingIntervalMin,
                     scalingIntervalMax,
                     minParallelismChange);

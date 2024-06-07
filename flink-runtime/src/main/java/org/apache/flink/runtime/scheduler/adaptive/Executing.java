@@ -24,6 +24,8 @@ import org.apache.flink.runtime.JobException;
 import org.apache.flink.runtime.checkpoint.CheckpointScheduling;
 import org.apache.flink.runtime.checkpoint.CompletedCheckpoint;
 import org.apache.flink.runtime.execution.ExecutionState;
+import org.apache.flink.runtime.executiongraph.AccessExecutionGraph;
+import org.apache.flink.runtime.executiongraph.AccessExecutionJobVertex;
 import org.apache.flink.runtime.executiongraph.ArchivedExecutionGraph;
 import org.apache.flink.runtime.executiongraph.ExecutionGraph;
 import org.apache.flink.runtime.executiongraph.ExecutionJobVertex;
@@ -78,7 +80,9 @@ class Executing extends StateWithExecutionGraph
         this.context = context;
         Preconditions.checkState(
                 executionGraph.getState() == JobStatus.RUNNING, "Assuming running execution graph");
-        this.rescaleManager = rescaleManagerFactory.create(this, lastRescale);
+        this.rescaleManager =
+                rescaleManagerFactory.create(
+                        this, extractCurrentVertexParallelism(executionGraph), lastRescale);
 
         deploy();
 
@@ -96,14 +100,14 @@ class Executing extends StateWithExecutionGraph
         context.runIfState(this, callback, delay);
     }
 
-    @Override
-    public VertexParallelism getCurrentVertexParallelism() {
+    private static VertexParallelism extractCurrentVertexParallelism(
+            AccessExecutionGraph executionGraph) {
         return new VertexParallelism(
-                this.getExecutionGraph().getAllVertices().values().stream()
+                executionGraph.getAllVertices().values().stream()
                         .collect(
                                 Collectors.toMap(
-                                        ExecutionJobVertex::getJobVertexId,
-                                        ExecutionJobVertex::getParallelism)));
+                                        AccessExecutionJobVertex::getJobVertexId,
+                                        AccessExecutionJobVertex::getParallelism)));
     }
 
     @Override

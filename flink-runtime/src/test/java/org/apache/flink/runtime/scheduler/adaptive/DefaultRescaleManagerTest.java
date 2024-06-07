@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,10 @@ class DefaultRescaleManagerTest {
         final DefaultRescaleManager testInstance =
                 DefaultRescaleManager.Factory.fromSettings(
                                 AdaptiveScheduler.Settings.of(configuration))
-                        .create(TestingRescaleManagerContext.stableContext(), Instant.now());
+                        .create(
+                                TestingRescaleManagerContext.stableContext(),
+                                new VertexParallelism(Collections.emptyMap()),
+                                Instant.now());
         assertThat(testInstance.scalingIntervalMin).isEqualTo(scalingIntervalMin);
         assertThat(testInstance.scalingIntervalMax).isEqualTo(scalingIntervalMax);
         assertThat(testInstance.minParallelismChange).isEqualTo(minParallelismChange);
@@ -73,6 +77,7 @@ class DefaultRescaleManagerTest {
                                 new DefaultRescaleManager(
                                         Instant.now(),
                                         ctx,
+                                        new VertexParallelism(Collections.emptyMap()),
                                         cooldownThreshold,
                                         cooldownThreshold.minusNanos(1),
                                         1))
@@ -426,11 +431,6 @@ class DefaultRescaleManagerTest {
         // ///////////////////////////////////////////////
 
         @Override
-        public VertexParallelism getCurrentVertexParallelism() {
-            return this.currentVertexParallelism;
-        }
-
-        @Override
         public Optional<VertexParallelism> getAvailableVertexParallelism() {
             return Optional.ofNullable(availableVertexParallelism);
         }
@@ -493,6 +493,7 @@ class DefaultRescaleManagerTest {
                             // clock that returns the time based on the configured elapsedTime
                             () -> Objects.requireNonNull(initializationTime).plus(elapsedTime),
                             this,
+                            currentVertexParallelism,
                             SCALING_MIN,
                             SCALING_MAX,
                             MIN_PARALLELISM_CHANGE) {

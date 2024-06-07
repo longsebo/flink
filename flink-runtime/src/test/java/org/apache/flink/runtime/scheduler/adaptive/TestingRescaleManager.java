@@ -18,6 +18,8 @@
 
 package org.apache.flink.runtime.scheduler.adaptive;
 
+import org.apache.flink.runtime.scheduler.adaptive.allocator.VertexParallelism;
+
 import java.time.Instant;
 
 public class TestingRescaleManager implements RescaleManager {
@@ -46,7 +48,10 @@ public class TestingRescaleManager implements RescaleManager {
         }
 
         @Override
-        public RescaleManager create(Context ignoredContext, Instant ignoredLastRescale) {
+        public RescaleManager create(
+                Context ignoredContext,
+                VertexParallelism ignoredCurrentVertexParallelism,
+                Instant ignoredLastRescale) {
             return new TestingRescaleManager(onChangeRunnable);
         }
     }

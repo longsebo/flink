@@ -37,12 +37,6 @@ public interface RescaleManager {
     interface Context {
 
         /**
-         * Returns the {@link VertexParallelism} of the currently deployed {@link
-         * org.apache.flink.runtime.executiongraph.ExecutionGraph}.
-         */
-        VertexParallelism getCurrentVertexParallelism();
-
-        /**
          * Returns the {@link VertexParallelism} that could be achieved by the currently available
          * free slots for the job or an empty {@code Optional} if there are not enough free slots.
          */
@@ -62,6 +56,9 @@ public interface RescaleManager {
          * Creates a {@code RescaleManager} instance for the given {@code rescaleContext} and
          * previous rescale time.
          */
-        RescaleManager create(Context rescaleContext, Instant lastRescale);
+        RescaleManager create(
+                Context rescaleContext,
+                VertexParallelism currentVertexParallelism,
+                Instant lastRescale);
     }
 }
