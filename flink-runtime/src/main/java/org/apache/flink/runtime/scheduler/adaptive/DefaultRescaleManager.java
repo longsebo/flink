@@ -36,9 +36,9 @@ import java.time.temporal.Temporal;
 import java.util.function.Supplier;
 
 /**
- * {@code DefaultRescaleManager} manages the rescaling in depending on time of the previous rescale
- * operation and the available resources. It handles the event based on the following phases (in
- * that order):
+ * {@code DefaultRescaleManager} manages triggering the next rescaling based on when the previous
+ * rescale operation happened and the available resources. It handles the event based on the
+ * following phases (in that order):
  *
  * <ol>
  *   <li>Cooldown phase: No rescaling takes place (its upper threshold is defined by {@code
