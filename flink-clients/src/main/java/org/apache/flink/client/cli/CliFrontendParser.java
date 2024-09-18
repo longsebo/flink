@@ -85,6 +85,15 @@ public class CliFrontendParser {
                     "If the job is submitted in attached mode, perform a best-effort cluster shutdown "
                             + "when the CLI is terminated abruptly, e.g., in response to a user interrupt, such as typing Ctrl + C.");
 
+    static final Option JARDIR_OPTION =
+            new Option(
+                    "jd",
+                    "jardir",
+                    true,
+                    "Adds a jar dir to each user code "
+                            + "classloader  on all nodes in the cluster. The paths must specify exists and be "
+                            + "accessible on all nodes (e.g. by means of a NFS share). You can use this option multiple "
+                            + "times for specifying more than one URL. ");
     /**
      * @deprecated use non-prefixed variant {@link #DETACHED_OPTION} for both YARN and non-YARN
      *     deployments
@@ -265,6 +274,7 @@ public class CliFrontendParser {
         DETACHED_OPTION.setRequired(false);
         SHUTDOWN_IF_ATTACHED_OPTION.setRequired(false);
         YARN_DETACHED_OPTION.setRequired(false);
+        JARDIR_OPTION.setRequired(false);
 
         ARGS_OPTION.setRequired(false);
         ARGS_OPTION.setArgName("programArgs");
@@ -331,6 +341,7 @@ public class CliFrontendParser {
         options.addOption(PYREQUIREMENTS_OPTION);
         options.addOption(PYARCHIVE_OPTION);
         options.addOption(PYEXEC_OPTION);
+        options.addOption(JARDIR_OPTION);
         return options;
     }
 
@@ -346,6 +357,7 @@ public class CliFrontendParser {
         options.addOption(PYREQUIREMENTS_OPTION);
         options.addOption(PYARCHIVE_OPTION);
         options.addOption(PYEXEC_OPTION);
+        options.addOption(JARDIR_OPTION);
         return options;
     }
 
