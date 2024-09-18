@@ -28,6 +28,8 @@ import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
 
 import org.apache.commons.cli.CommandLine;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -38,6 +40,7 @@ import static org.apache.flink.client.cli.CliFrontendParser.ARGS_OPTION;
 import static org.apache.flink.client.cli.CliFrontendParser.CLASSPATH_OPTION;
 import static org.apache.flink.client.cli.CliFrontendParser.CLASS_OPTION;
 import static org.apache.flink.client.cli.CliFrontendParser.DETACHED_OPTION;
+import static org.apache.flink.client.cli.CliFrontendParser.JARDIR_OPTION;
 import static org.apache.flink.client.cli.CliFrontendParser.JAR_OPTION;
 import static org.apache.flink.client.cli.CliFrontendParser.PARALLELISM_OPTION;
 import static org.apache.flink.client.cli.CliFrontendParser.SHUTDOWN_IF_ATTACHED_OPTION;
@@ -90,6 +93,20 @@ public class ProgramOptions extends CommandLineOptions {
                 }
             }
         }
+        // load jardir all jar.
+        if (line.hasOption(JARDIR_OPTION.getOpt())) {
+            for (String path : line.getOptionValues(JARDIR_OPTION.getOpt())) {
+                List<URL> jarFiles = null;
+                try {
+                    jarFiles = loadAllJarFromPathURl(path);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                    throw new CliArgsException("Bad syntax for classpath: " + path);
+                }
+                // classpaths.add(new URL(path));
+                classpaths.addAll(jarFiles);
+            }
+        }
         this.classpaths = classpaths;
 
         if (line.hasOption(PARALLELISM_OPTION.getOpt())) {
@@ -113,6 +130,34 @@ public class ProgramOptions extends CommandLineOptions {
         shutdownOnAttachedExit = line.hasOption(SHUTDOWN_IF_ATTACHED_OPTION.getOpt());
 
         this.savepointSettings = CliFrontendParser.createSavepointRestoreSettings(line);
+    }
+
+    private List<URL> loadAllJarFromPathURl(String path) throws MalformedURLException {
+        // 指定需要搜索的目录.
+        List<URL> urls = new ArrayList<>();
+        System.out.println("jar dir:" + path);
+        // 创建File对象表示目录.
+        File directory = new File(path);
+
+        // 使用FilenameFilter过滤出以.jar结尾的文件.
+        File[] jarFiles =
+                directory.listFiles(
+                        new FilenameFilter() {
+                            @Override
+                            public boolean accept(File dir, String name) {
+                                return name.toLowerCase().endsWith(".jar");
+                            }
+                        });
+        System.out.println("jarFiles len:" + jarFiles.length);
+        // 遍历找到的jar文件
+        if (jarFiles != null) {
+            for (File jarFile : jarFiles) {
+                System.out.println(jarFile.getAbsolutePath());
+                URL url = jarFile.toURI().toURL();
+                urls.add(url);
+            }
+        }
+        return urls;
     }
 
     protected String[] extractProgramArgs(CommandLine line) {
