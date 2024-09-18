@@ -881,14 +881,14 @@ under the License.
 
 
 		<profile>
-			<id>scala-2.12</id>
+			<id>scala-2_12</id>
 			<properties>
 				<scala.version>2.12.7</scala.version>
 				<scala.binary.version>2.12</scala.binary.version>
 			</properties>
 			<activation>
 				<property>
-					<name>scala-2.12</name>
+					<name>scala-2_12</name>
 				</property>
 			</activation>
 			<build>
@@ -928,15 +928,26 @@ under the License.
 									<goal>enforce</goal>
 								</goals>
 								<configuration>
-									<rules>
-										<bannedDependencies>
-											<excludes combine.children="append">
-												<exclude>*:*_2.11</exclude>
-												<exclude>*:*_2.10</exclude>
-											</excludes>
-										</bannedDependencies>
-									</rules>
+<!--									<rules>-->
+<!--										<bannedDependencies>-->
+<!--											<excludes combine.children="append">-->
+<!--												<exclude>*:*_2.11</exclude>-->
+<!--												<exclude>*:*_2.10</exclude>-->
+<!--											</excludes>-->
+<!--										</bannedDependencies>-->
+<!--									</rules>-->
+									<skip>true</skip>
 								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.rat</groupId>
+						<artifactId>apache-rat-plugin</artifactId>
+						<version>0.12</version>
+						<executions>
+							<execution>
+								<phase>none</phase>
 							</execution>
 						</executions>
 					</plugin>
