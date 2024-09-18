@@ -50,9 +50,14 @@ under the License.
 			<artifactId>flink-clients_${scala.binary.version}</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.example</groupId>
+			<artifactId>testcallextjar</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
-	
-	
+
+
 	<build>
 		<plugins>
 
@@ -150,13 +155,13 @@ under the License.
 					<configLocation>${project.basedir}/../../tools/maven/scalastyle-config.xml</configLocation>
 				</configuration>
 			</plugin>
-			
+
 			<!-- create the example JAR files -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<executions>
-				
+
 					<!-- KMeans -->
 					<execution>
 						<id>KMeans</id>
@@ -194,13 +199,13 @@ under the License.
 						</goals>
 						<configuration>
 							<classifier>TransitiveClosure</classifier>
-				
+
 							<archive>
 								<manifestEntries>
 									<program-class>org.apache.flink.examples.java.graph.TransitiveClosureNaive</program-class>
 								</manifestEntries>
 							</archive>
-				
+
 							<includes>
 								<include>**/java/graph/TransitiveClosureNaive.class</include>
 								<include>**/java/graph/TransitiveClosureNaive$*.class</include>
@@ -236,7 +241,7 @@ under the License.
 							</includes>
 						</configuration>
 					</execution>
-					
+
 					<!-- EnumTriangles Basic -->
 					<execution>
 						<id>EnumTriangles</id>
@@ -264,7 +269,7 @@ under the License.
 							</includes>
 						</configuration>
 					</execution>
-					
+
 					<!-- PageRank -->
 					<execution>
 						<id>PageRank</id>
@@ -344,6 +349,31 @@ under the License.
 						</configuration>
 					</execution>
 
+					<!-- TestLoadExtJar -->
+					<execution>
+						<id>TestLoadExtJar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier>TestLoadExtJar</classifier>
+
+							<archive>
+								<manifestEntries>
+									<program-class>org.apache.flink.examples.java.testloadextjar.TestLoadExtJar</program-class>
+								</manifestEntries>
+							</archive>
+
+							<includes>
+								<include>**/java/testloadextjar/TestLoadExtJar.class</include>
+								<include>**/java/testloadextjar/TestLoadExtJar*.class</include>
+								<include>**/java/wordcount/util/WordCountData.class</include>
+								<include>META-INF/LICENSE</include>
+								<include>META-INF/NOTICE</include>
+							</includes>
+						</configuration>
+					</execution>
 					<!-- Distributed Copy -->
 					<execution>
 						<id>DistCp</id>
@@ -387,6 +417,7 @@ under the License.
 								<copy file="${project.basedir}/target/flink-examples-batch_${scala.binary.version}-${project.version}-WebLogAnalysis.jar" tofile="${project.basedir}/target/WebLogAnalysis.jar" />
 								<copy file="${project.basedir}/target/flink-examples-batch_${scala.binary.version}-${project.version}-WordCount.jar" tofile="${project.basedir}/target/WordCount.jar" />
 								<copy file="${project.basedir}/target/flink-examples-batch_${scala.binary.version}-${project.version}-DistCp.jar" tofile="${project.basedir}/target/DistCp.jar" />
+								<copy file="${project.basedir}/target/flink-examples-batch_${scala.binary.version}-${project.version}-TestLoadExtJar.jar" tofile="${project.basedir}/target/TestLoadExtJar.jar" />
 							</target>
 						</configuration>
 					</execution>
